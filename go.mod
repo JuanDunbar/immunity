@@ -4,6 +4,7 @@ go 1.19
 
 require (
 	github.com/benthosdev/benthos/v4 v4.6.0
+	github.com/goccy/go-json v0.9.11
 	github.com/timbray/quamina v0.2.0
 )
 

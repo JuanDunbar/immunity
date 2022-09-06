@@ -2,9 +2,11 @@ package rules
 
 import (
 	"context"
-	"github.com/juandunbar/immunity/engine"
 
 	"github.com/benthosdev/benthos/v4/public/service"
+	"github.com/goccy/go-json"
+
+	"github.com/juandunbar/immunity/engine"
 )
 
 func init() {
@@ -27,7 +29,6 @@ type rulesProcessor struct {
 }
 
 func newRulesProcessor(logger *service.Logger) *rulesProcessor {
-	logger.Debug("creating new rules engine")
 	rulesEngine, _ := engine.NewRulesEngine()
 	return &rulesProcessor{
 		logger:      logger,
@@ -35,22 +36,39 @@ func newRulesProcessor(logger *service.Logger) *rulesProcessor {
 	}
 }
 
+type suspiciousActivity struct {
+	Event  string `json:"event"`
+	Data   string `json:"data"`
+	Rule   string `json:"rule"`
+	Action string `json:"action"`
+}
+
 func (r *rulesProcessor) Process(ctx context.Context, m *service.Message) (service.MessageBatch, error) {
 	event, err := m.AsBytes()
 	if err != nil {
 		return nil, err
 	}
+	// add our original event to the output, so we can store in elasticsearch
+	outputs := []*service.Message{m}
+	// run our event through our rules engine to find any matching rules
 	matches, err := r.rulesEngine.Match(event)
 	for _, match := range matches {
 		rule, err := r.rulesEngine.GetRule(match.(string))
 		if err != nil {
 			return nil, err
 		}
-		// TODO run the rule action
-		r.logger.Debugf("event matched rule", rule, string(event))
+		// create new output event that we can filter on for actions
+		suspEvent := suspiciousActivity{
+			Event:  "suspicious_activity",
+			Data:   string(event),
+			Rule:   rule.ID,
+			Action: rule.Action,
+		}
+		newMessage, _ := json.Marshal(suspEvent)
+		outputs = append(outputs, service.NewMessage(newMessage))
 	}
 
-	return []*service.Message{m}, nil
+	return outputs, nil
 }
 
 func (r *rulesProcessor) Close(ctx context.Context) error {
