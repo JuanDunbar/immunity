@@ -25,21 +25,21 @@ type RulesEngine struct {
 var list = map[string]Rule{
 	"sadf23425": {
 		ID:          "sadf2342",
-		Query:       "",
+		Query:       `{"name": [ {"exists": true} ]}`,
 		Description: "test rule one",
 		Action:      "fishy",
 		LastUsed:    time.Now(),
 	},
 	"ert324234": {
 		ID:          "ert324234",
-		Query:       "",
+		Query:       `{"name":["david"]}`,
 		Description: "test rule two",
 		Action:      "spam",
 		LastUsed:    time.Now(),
 	},
 	"zxcv42389": {
 		ID:          "zxcv42389",
-		Query:       "",
+		Query:       `{"name": [ {"exists": false} ]}`,
 		Description: "test rule three",
 		Action:      "fishy",
 		LastUsed:    time.Now(),

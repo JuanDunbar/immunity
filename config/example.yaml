@@ -1,14 +1,15 @@
 input:
-  gibberish:
-    length: 10
+  stdin:
+    codec: lines
 
 pipeline:
   processors:
-    - encode:
-        scheme: base64
-    - bloblang: 'root.gibberish = content().string()'
-    - throttle:
-        period: 1s
+  - rules: {}
+
+metrics:
+  prometheus: {}
+  mapping: ""
 
 output:
-  blue_stdout: {}
+  stdout:
+    codec: lines

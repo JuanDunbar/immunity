@@ -27,6 +27,7 @@ type rulesProcessor struct {
 }
 
 func newRulesProcessor(logger *service.Logger) *rulesProcessor {
+	logger.Debug("creating new rules engine")
 	rulesEngine, _ := engine.NewRulesEngine()
 	return &rulesProcessor{
 		logger:      logger,
