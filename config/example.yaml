@@ -1,0 +1,14 @@
+input:
+  gibberish:
+    length: 10
+
+pipeline:
+  processors:
+    - encode:
+        scheme: base64
+    - bloblang: 'root.gibberish = content().string()'
+    - throttle:
+        period: 1s
+
+output:
+  blue_stdout: {}
