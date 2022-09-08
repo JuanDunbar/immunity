@@ -1,0 +1,47 @@
+input:
+  kafka:
+    addresses:
+      - localhost:9092
+    topics:
+      - immunity_topic
+    consumer_group: "immunity_group"
+
+pipeline:
+  processors:
+    - rules: {}
+
+metrics:
+  prometheus: {}
+  mapping: ""
+
+output:
+  switch:
+    cases:
+      - check: this.event == "suspicious_activity"
+        output:
+          elasticsearch:
+            urls:
+              - http://localhost:9200
+            index: "immunity-events"
+            id: ${!count("elastic_ids")}-${!timestamp_unix()}
+            type: ""
+            max_in_flight: 64
+            batching:
+              count: 0
+              byte_size: 0
+              period: ""
+              check: ""
+
+      - output:
+          elasticsearch:
+            urls:
+              - http://localhost:9200
+            index: "customer-events"
+            id: ${!count("elastic_ids")}-${!timestamp_unix()}
+            type: ""
+            max_in_flight: 64
+            batching:
+              count: 0
+              byte_size: 0
+              period: ""
+              check: ""

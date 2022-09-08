@@ -7,6 +7,7 @@ import (
 
 	_ "github.com/benthosdev/benthos/v4/public/components/all"
 
+	// import our custom processor
 	_ "github.com/juandunbar/immunity/processors/rules"
 )
 

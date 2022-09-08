@@ -1,0 +1,86 @@
+version: "3.8"
+
+services:
+  immunity:
+    container_name: immunity
+    image: .
+    networks:
+      - immunity-net
+    ports:
+      - "4195:4195"
+
+  redpanda:
+    image: docker.redpanda.com/vectorized/redpanda:v21.11.15
+    container_name: redpanda
+    networks:
+      - immunity-net
+    command:
+      - redpanda start
+      - --smp 1
+      - --overprovisioned
+      - --node-id 0
+      - --kafka-addr PLAINTEXT://0.0.0.0:29092,OUTSIDE://0.0.0.0:9092
+      - --advertise-kafka-addr PLAINTEXT://redpanda:29092,OUTSIDE://localhost:9092
+      - --pandaproxy-addr 0.0.0.0:8082
+      - --advertise-pandaproxy-addr localhost:8082
+    ports:
+      - "8081:8081"
+      - "8082:8082"
+      - "9092:9092"
+      - "9644:9644"
+      - "29092:29092"
+
+  redpanda_console:
+    container_name: redpanda_console
+    image: docker.redpanda.com/vectorized/console:latest
+    networks:
+      - immunity-net
+    entrypoint: /bin/sh
+    command: -c "echo \"$$CONSOLE_CONFIG_FILE\" > /tmp/config.yml; /app/console"
+    environment:
+      CONFIG_FILEPATH: /tmp/config.yml
+      CONSOLE_CONFIG_FILE: |
+        kafka:
+          brokers: ["redpanda:29092"]
+          schemaRegistry:
+            enabled: true
+            urls: ["http://redpanda:8081"]
+        redpanda:
+          adminApi:
+            enabled: true
+            urls: ["http://redpanda:9644"]
+        connect:
+          enabled: true
+          clusters:
+            - name: local-connect-cluster
+              url: http://connect:8083
+    ports:
+      - "8080:8080"
+
+  elasticsearch:
+    container_name: elasticsearch
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.4.1
+    environment:
+      - "xpack.security.enabled=false"
+      - "discovery.type=single-node"
+      - "http.publish_host=localhost"
+    networks:
+      - immunity-net
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+
+  kibana:
+    container_name: kibana
+    image: docker.elastic.co/kibana/kibana:8.4.1
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    networks:
+      - immunity-net
+    ports:
+      - "5601:5601"
+
+networks:
+  immunity-net:
+    driver: bridge
+
