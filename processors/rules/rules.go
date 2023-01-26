@@ -2,13 +2,13 @@ package rules
 
 import (
 	"context"
-	"github.com/juandunbar/immunity/events"
 	"time"
 
 	"github.com/benthosdev/benthos/v4/public/service"
 	"github.com/goccy/go-json"
 
 	"github.com/juandunbar/immunity/engine"
+	"github.com/juandunbar/immunity/events"
 )
 
 func init() {
@@ -60,8 +60,10 @@ func (r *rulesProcessor) Process(ctx context.Context, m *service.Message) (servi
 			Action:    rule.Action,
 			Timestamp: time.Now(),
 		}
-		newMessage, _ := json.Marshal(suspiciousActivity)
-		outputMessages = append(outputMessages, service.NewMessage(newMessage))
+		messageBytes, _ := json.Marshal(suspiciousActivity)
+		newMessage := service.NewMessage(messageBytes)
+		newMessage.MetaSet("event_type", "suspicious_activity")
+		outputMessages = append(outputMessages, newMessage)
 	}
 
 	return outputMessages, nil

@@ -1,3 +1,6 @@
+http:
+  enabled: true
+
 input:
   kafka:
     addresses:
@@ -8,11 +11,11 @@ input:
 
 pipeline:
   processors:
-    - rules: {}
+    - rules:
+    - handlers:
 
 metrics:
   prometheus: {}
-  mapping: ""
 
 output:
   switch:

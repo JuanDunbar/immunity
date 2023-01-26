@@ -2,7 +2,9 @@ package handlers
 
 import (
 	"context"
+
 	"github.com/benthosdev/benthos/v4/public/service"
+
 	"github.com/juandunbar/immunity/engine"
 )
 
@@ -34,12 +36,17 @@ func newHandlersProcessor(logger *service.Logger) *handlersProcessor {
 }
 
 func (r *handlersProcessor) Process(ctx context.Context, m *service.Message) (service.MessageBatch, error) {
-	// need to get our event type from event headers
-	//eventType, _ := m.MetaGet("event_type")
-
 	// add our original event to the output, so we can store in elasticsearch
 	outputMessages := []*service.Message{m}
-	// run our event through our rules engine to find any matching rules
+	// need to get our event type from event headers
+	eventType, ok := m.MetaGet("event_type")
+	if ok == false {
+		r.logger.Error("event_type missing cannot process handlers")
+		return outputMessages, nil
+	}
+	event, _ := m.AsBytes()
+	// kick off our process chain for this event
+	r.handlersEngine.Process(eventType, event)
 
 	return outputMessages, nil
 }

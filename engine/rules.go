@@ -6,23 +6,17 @@ import (
 	"time"
 
 	"github.com/timbray/quamina"
+
+	"github.com/juandunbar/immunity/models"
 )
 
-type Rule struct {
-	ID          string
-	Query       string
-	Description string
-	Action      string
-	LastUsed    time.Time
-}
-
 type RulesEngine struct {
-	rulesList map[string]Rule
+	rulesList map[string]models.Rule
 	matcher   *quamina.Quamina
 }
 
 // TODO get rules from database
-var list = map[string]Rule{
+var list = map[string]models.Rule{
 	"sadf23425": {
 		ID:          "sadf2342",
 		Query:       `{"name": [ {"exists": true} ]}`,
@@ -39,7 +33,7 @@ var list = map[string]Rule{
 	},
 	"zxcv42389": {
 		ID:          "zxcv42389",
-		Query:       `{"name": [ {"exists": false} ]}`,
+		Query:       `{"first_name": [ {"exists": false} ]}`,
 		Description: "test rule three",
 		Action:      "rate_limit",
 		LastUsed:    time.Now(),
@@ -68,7 +62,7 @@ func (r *RulesEngine) Match(event []byte) ([]quamina.X, error) {
 	return r.matcher.MatchesForEvent(event)
 }
 
-func (r *RulesEngine) GetRule(id string) (*Rule, error) {
+func (r *RulesEngine) GetRule(id string) (*models.Rule, error) {
 	rule, ok := list[id]
 	if ok != true {
 		return nil, errors.New(fmt.Sprintf("failed to get data for rule: %s", id))

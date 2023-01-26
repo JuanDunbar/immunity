@@ -1,6 +1,6 @@
 FROM golang:1.19 AS build
 
-RUN useradd -u 10001 benthos
+RUN useradd -u 10001 immunity
 
 WORKDIR /build/
 COPY . /build/
@@ -16,10 +16,9 @@ COPY --from=build /etc/passwd /etc/passwd
 COPY --from=build /build/immunity .
 COPY benthos/benthos.yaml /benthos.yaml
 
-USER benthos
+USER immunity
 
 EXPOSE 4195
+EXPOSE 8181
 
 ENTRYPOINT ["/immunity"]
-
-CMD ["-c", "/benthos.yaml"]
