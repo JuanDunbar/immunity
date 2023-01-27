@@ -1,28 +1,34 @@
 package database
 
 import (
-	"context"
 	"database/sql"
 	"fmt"
 
 	_ "github.com/lib/pq"
+
+	"github.com/juandunbar/immunity/config"
 )
 
-// TODO move to config
-const (
-	host     = "localhost"
-	port     = 5432
-	user     = ""
-	password = ""
-	dbname   = "immunity"
-)
+type Database interface {
+	Connect(c *config.Config) error
+	Disconnect() error
+	Query(query string) error
+	Execute(query string) error
+}
 
-var dbClient *sql.DB
+func NewDatabase() Database {
+	return new(postgres)
+}
 
-func Connect(ctx context.Context) error {
+type postgres struct {
+	DB *sql.DB
+}
+
+func (pg *postgres) Connect(c *config.Config) error {
 	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s "+
 		"password=%s dbname=%s sslmode=disable",
-		host, port, user, password, dbname)
+		c.Database.Host, c.Database.Port, c.Database.User,
+		c.Database.Password, c.Database.DBname)
 	db, err := sql.Open("postgres", psqlInfo)
 	if err != nil {
 		return err
@@ -32,15 +38,19 @@ func Connect(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+	pg.DB = db
 
-	dbClient = db
 	return nil
 }
 
-func Disconnect() error {
-	return dbClient.Close()
+func (pg *postgres) Disconnect() error {
+	return pg.DB.Close()
 }
 
-func GetClient() *sql.DB {
-	return dbClient
+func (pg *postgres) Query(query string) error {
+	return nil
+}
+
+func (pg *postgres) Execute(query string) error {
+	return nil
 }

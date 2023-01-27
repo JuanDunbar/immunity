@@ -2,14 +2,24 @@ package api
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"time"
 
 	"github.com/gorilla/mux"
-	log "github.com/sirupsen/logrus"
+	"github.com/juandunbar/immunity/config"
 )
 
-func Run(ctx context.Context) {
+type Api interface {
+	Run(errCh chan error)
+	Shutdown() error
+}
+
+type api struct {
+	server *http.Server
+}
+
+func NewApiServer(c *config.Config) Api {
 	r := mux.NewRouter()
 	// Add your routes as needed
 	rc := new(rulesController)
@@ -17,28 +27,24 @@ func Run(ctx context.Context) {
 	r.HandleFunc("/rules/add", rc.PostRules).Methods("GET")
 
 	srv := &http.Server{
-		Addr: ":8181",
+		Addr: fmt.Sprintf(":%d", c.Api.Port),
 		// Good practice to set timeouts to avoid Slowloris attacks.
 		WriteTimeout: time.Second * 15,
 		ReadTimeout:  time.Second * 15,
 		IdleTimeout:  time.Second * 60,
 		Handler:      r, // Pass our instance of gorilla/mux in.
 	}
-	// Run our server in a goroutine so that it doesn't block.
-	go func() {
-		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.WithError(err).WithFields(log.Fields{
-				"@service": "immunity",
-			}).Error("failed to run api server")
-		}
-	}()
-	// Block until we receive our signal.
-	<-ctx.Done()
-	shutdownCtx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
-	if err := srv.Shutdown(shutdownCtx); err != nil {
-		log.WithError(err).WithFields(log.Fields{
-			"@service": "immunity",
-		}).Error("failed to shutdown api server")
+	return &api{
+		server: srv,
 	}
+}
+
+func (api *api) Run(errCh chan error) {
+	if err := api.server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+		errCh <- err
+	}
+}
+
+func (api *api) Shutdown() error {
+	return api.server.Shutdown(context.TODO())
 }
