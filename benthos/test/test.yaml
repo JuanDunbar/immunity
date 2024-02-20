@@ -1,0 +1,23 @@
+http:
+  enabled: true
+  address: 0.0.0.0:4196
+
+metrics:
+  prometheus: {}
+
+input:
+  csv:
+    paths:
+      - ./data/TEST.csv
+    parse_header_row: true
+    delimiter: ','
+    lazy_quotes: false
+
+output:
+  http_client:
+    url: "http://host.docker.internal:8181/rules/stream"
+    verb: POST
+    headers:
+      event_type: ${! json("event_type") }
+    timeout: 5s
+    max_in_flight: 64

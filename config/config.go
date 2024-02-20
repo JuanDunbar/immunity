@@ -2,6 +2,8 @@ package config
 
 import (
 	"flag"
+	"path/filepath"
+	"runtime"
 
 	"github.com/spf13/viper"
 )
@@ -23,8 +25,9 @@ func LoadConfig() (*Config, error) {
 	env := flag.String("env", "dev", "environment immunity is running in")
 	switch *env {
 	case "dev":
+		workingDir := getWorkingDir()
+		viper.AddConfigPath(workingDir)
 		viper.SetConfigName("dev")
-		viper.AddConfigPath("./config")
 	case "production":
 		viper.SetConfigName("immunity")
 		viper.AddConfigPath("/etc/immunity/")
@@ -44,4 +47,10 @@ func LoadConfig() (*Config, error) {
 	}
 
 	return config, nil
+}
+
+func getWorkingDir() string {
+	_, b, _, _ := runtime.Caller(0)
+	wDir := filepath.Dir(b)
+	return wDir
 }

@@ -3,7 +3,6 @@ package engine
 import (
 	"errors"
 	"fmt"
-	"time"
 
 	"github.com/timbray/quamina"
 
@@ -11,40 +10,17 @@ import (
 )
 
 type RulesEngine struct {
-	rulesList map[string]models.Rule
+	rulesList map[int]models.Rule
 	matcher   *quamina.Quamina
 }
 
-// TODO get rules from database
-var list = map[string]models.Rule{
-	"sadf23425": {
-		ID:          "sadf2342",
-		Query:       `{"name": [ {"exists": true} ]}`,
-		Description: "test rule one",
-		Action:      "alert",
-		LastUsed:    time.Now(),
-	},
-	"ert324234": {
-		ID:          "ert324234",
-		Query:       `{"name":["david"]}`,
-		Description: "test rule two",
-		Action:      "terminate",
-		LastUsed:    time.Now(),
-	},
-	"zxcv42389": {
-		ID:          "zxcv42389",
-		Query:       `{"first_name": [ {"exists": false} ]}`,
-		Description: "test rule three",
-		Action:      "rate_limit",
-		LastUsed:    time.Now(),
-	},
-}
-
-func NewRulesEngine() (*RulesEngine, error) {
+func NewRulesEngine(store *models.RulesStore) (*RulesEngine, error) {
 	matcher, err := quamina.New()
 	if err != nil {
 		return nil, err
 	}
+	// get our rules from the DB as a lookup table
+	list, err := store.GetRuleListMap()
 	// load rules into our matcher
 	for k, v := range list {
 		err = matcher.AddPattern(k, v.Query)
@@ -59,11 +35,12 @@ func NewRulesEngine() (*RulesEngine, error) {
 }
 
 func (r *RulesEngine) Match(event []byte) ([]quamina.X, error) {
+	// TODO this is not safe for concurrent use
 	return r.matcher.MatchesForEvent(event)
 }
 
-func (r *RulesEngine) GetRule(id string) (*models.Rule, error) {
-	rule, ok := list[id]
+func (r *RulesEngine) GetRule(id int) (*models.Rule, error) {
+	rule, ok := r.rulesList[id]
 	if ok != true {
 		return nil, errors.New(fmt.Sprintf("failed to get data for rule: %s", id))
 	}

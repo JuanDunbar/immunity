@@ -3,6 +3,8 @@ package api
 import (
 	"context"
 	"fmt"
+	"github.com/juandunbar/immunity/engine"
+	"github.com/juandunbar/immunity/models"
 	"net/http"
 	"time"
 
@@ -19,12 +21,15 @@ type api struct {
 	server *http.Server
 }
 
-func NewApiServer(c *config.Config) Api {
+func NewApiServer(c *config.Config, rs *models.RulesStore, re *engine.RulesEngine) Api {
 	r := mux.NewRouter()
 	// Add your routes as needed
-	rc := new(rulesController)
+	rc := &rulesController{Store: rs}
 	r.HandleFunc("/rules", rc.GetRules).Methods("GET")
 	r.HandleFunc("/rules/add", rc.PostRules).Methods("GET")
+	// routes for benthos data stream
+	sc := &rulesStreamController{RulesEngine: re}
+	r.HandleFunc("/rules/stream", sc.ProcessRulesStream).Methods("POST")
 
 	srv := &http.Server{
 		Addr: fmt.Sprintf(":%d", c.Api.Port),

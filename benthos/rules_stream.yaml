@@ -1,0 +1,46 @@
+http:
+  enabled: true
+
+metrics:
+  prometheus: {}
+
+input:
+  kafka:
+    addresses:
+      - redpanda:29092
+    topics:
+      - immunity_topic
+    consumer_group: "immunity_group"
+
+output:
+  broker:
+    pattern: fan_out
+    outputs:
+      - resource: rules_stream
+      - resource: rules_stream_elasticsearch
+
+output_resources:
+  - label: rules_stream
+    http_client:
+      url: "http://host.docker.internal:8181/rules/stream"
+      verb: POST
+      metadata:
+        include_prefixes:
+          - "event_type"
+      timeout: 5s
+      max_in_flight: 64
+      batching:
+        count: 10
+        period: "10s"
+
+  - label: rules_stream_elasticsearch
+    elasticsearch:
+      urls:
+        - http://elasticsearch:9200
+      index: "immunity-events"
+      id: ${!count("elastic_ids")}-${!timestamp_unix()}
+      type: ""
+      max_in_flight: 64
+      batching:
+        count: 10
+        period: "5s"

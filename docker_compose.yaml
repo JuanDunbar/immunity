@@ -10,7 +10,7 @@ services:
       - "4195:4195"
 
   redpanda:
-    image: docker.redpanda.com/vectorized/redpanda:v21.11.15
+    image: docker.redpanda.com/vectorized/redpanda:v23.3.5
     container_name: immunity-redpanda
     networks:
       - immunity-net
@@ -57,13 +57,32 @@ services:
     ports:
       - "8080:8080"
 
+  rules_stream:
+    image: jeffail/benthos
+    networks:
+      - immunity-net
+    volumes:
+      - "./benthos/rules_stream.yaml:/benthos.yaml"
+    ports:
+      - "4195:4195"
+
+  test_rules_stream:
+    image: jeffail/benthos
+    networks:
+      - immunity-net
+    volumes:
+      - "./benthos/test/test.yaml:/benthos.yaml"
+      - "./benthos/test/TEST.csv:/data/TEST.csv"
+    ports:
+      - "4196:4196"
+
   elasticsearch:
     container_name: immunity-elasticsearch
     image: docker.elastic.co/elasticsearch/elasticsearch:8.4.1
     environment:
       - "xpack.security.enabled=false"
       - "discovery.type=single-node"
-      - "http.publish_host=localhost"
+      - "http.publish_host=elasticsearch"
     networks:
       - immunity-net
     ports:
