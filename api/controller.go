@@ -61,7 +61,7 @@ func (sc *rulesStreamController) ProcessRulesStream(w http.ResponseWriter, r *ht
 		"event_data": string(event),
 	}).Info("event received")
 
-	matches, err := sc.RulesEngine.Match(event)
+	matches, err := sc.RulesEngine.MatchWithSafety(event)
 	for _, match := range matches {
 		rule, err := sc.RulesEngine.GetRule(match.(int))
 		if err != nil {
@@ -80,5 +80,6 @@ func (sc *rulesStreamController) ProcessRulesStream(w http.ResponseWriter, r *ht
 			"event_type":  eventType,
 			"event_data":  string(event),
 		}).Warn("rule match")
+
 	}
 }

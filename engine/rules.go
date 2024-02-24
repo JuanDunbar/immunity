@@ -3,7 +3,6 @@ package engine
 import (
 	"errors"
 	"fmt"
-
 	"github.com/timbray/quamina"
 
 	"github.com/juandunbar/immunity/models"
@@ -35,8 +34,20 @@ func NewRulesEngine(store *models.RulesStore) (*RulesEngine, error) {
 }
 
 func (r *RulesEngine) Match(event []byte) ([]quamina.X, error) {
-	// TODO this is not safe for concurrent use
 	return r.matcher.MatchesForEvent(event)
+}
+
+// MatchWithSafety thread safe version of Match
+func (r *RulesEngine) MatchWithSafety(event []byte) ([]quamina.X, error) {
+	m := r.matcher.Copy()
+	// clean up our copy
+	defer func() { m = nil }()
+	// check event for matches
+	matches, err := m.MatchesForEvent(event)
+	if err != nil {
+		return nil, err
+	}
+	return matches, nil
 }
 
 func (r *RulesEngine) GetRule(id int) (*models.Rule, error) {
